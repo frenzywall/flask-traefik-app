@@ -9,7 +9,7 @@ services:
       - "traefik.http.services.flask-app.loadbalancer.server.port=5000"
       - "traefik.http.routers.flask-app.entryPoints=web"
     deploy:
-      replicas: 1
+      replicas: 3
       restart_policy:
         condition: on-failure
 
