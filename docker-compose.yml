@@ -1,0 +1,34 @@
+services:
+  flask-app:
+    build: .
+    image: flask-app:latest
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flask-app.rule=Host(`localhost`)"
+      - "traefik.http.services.flask-app.loadbalancer.server.port=5000"
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+
+  traefik:
+    image: "traefik:v2.9"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entryPoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    networks:
+      - web
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      replicas: 1
+
+networks:
+  web:
+    driver: overlay
