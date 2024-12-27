@@ -1,15 +1,15 @@
 services:
   flask-app:
-    build: .
-    image: flask-app:latest
+    image: ghcr.io/frenzywall/flask-traefik-app:v0.3
     networks:
       - web
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.flask-app.rule=Host(`localhost`)"
+      - "traefik.http.routers.flask-app.rule=HostRegexp(`{host:.+}`)"  
       - "traefik.http.services.flask-app.loadbalancer.server.port=5000"
+      - "traefik.http.routers.flask-app.entryPoints=web"
     deploy:
-      replicas: 3
+      replicas: 1
       restart_policy:
         condition: on-failure
 

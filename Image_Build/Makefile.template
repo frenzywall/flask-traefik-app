@@ -1,0 +1,58 @@
+IMAGE_NAME = ghcr.io/{{GHCR_USER}}/{{CUSTOM_IMAGE_NAME}}
+DOCKERFILE_PATH = Dockerfile
+BUILD_CONTEXT = .
+VERSION_FILE = version.txt
+
+VERSION = $(shell cat $(VERSION_FILE))
+
+increment_version = $(shell echo $(VERSION) | awk -F. '{print $$1 "." $$2+1}')
+
+decrement_version = $(shell echo $(VERSION) | awk -F. '{if ($$2 > 1) print $$1 "." $$2-1; else print $$1 ".1"}')
+
+build:
+	@echo "Building Docker image $(IMAGE_NAME):$(VERSION)..."
+	@docker build -t $(IMAGE_NAME):$(VERSION) -f $(DOCKERFILE_PATH) $(BUILD_CONTEXT)
+	@new_version=$(call increment_version); \
+	echo $$new_version > $(VERSION_FILE); \
+	echo "Version updated to $$new_version"
+	@echo "Successfully built $(IMAGE_NAME):$(VERSION), proceed with 'make push'."
+	@docker images
+
+push:
+	@decr_version=$(call decrement_version); \
+	echo "\n==== Starting Docker Image Push ====\n"; \
+	echo "Target Image: $(IMAGE_NAME):$$decr_version"; \
+	echo "\nPushing to GitHub Container Registry..."; \
+	docker push $(IMAGE_NAME):$$decr_version; \
+	echo "\n==== Push Completed Successfully ====\n"; \
+	\
+	echo "\n==== Deployment Information ===="; \
+	echo "✓ Image '$(IMAGE_NAME):$$decr_version' is now available in GHCR"; \
+	echo "✓ Next step: Proceed to Main(Production_deploy_dockerswarm)/Makefile\n"; \
+	\
+	echo "First Time Deployment:"; \
+	echo "----------------------"; \
+	echo "Use this image reference in docker-compose.yml:"; \
+	echo "$(IMAGE_NAME):$$decr_version\n"; \
+	\
+	echo "Update Existing Deployment:"; \
+	echo "-------------------------"; \
+	echo "To update the service, run:"; \
+	echo "docker service update --image $(IMAGE_NAME):$$decr_version flask-traefik-stack_flask-app"; \
+	echo "\nFor more information, run: make help\n"
+
+
+clean:
+	@echo "Cleaning up..."
+	@docker system prune -f
+	@rm -rf ./.credentials && echo "Removed .credentials file"
+	@rm Makefile && echo "Removed Makefile"
+
+help:
+	@echo "Available targets:"
+	@echo "  build      - Builds the Docker image and updates the version."
+	@echo "  push       - Pushes the Docker image to GitHub Container Registry (GHCR)."
+	@echo "  clean      - Cleans up Docker resources and removes the Makefile and .credentials file."
+	@echo "  help       - Displays this help message with descriptions of all available commands."
+
+.PHONY: build push clean

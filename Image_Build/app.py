@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Hello, this is a Flask app running behind Traefik with Docker Swarm!"
+    return "Hello from Docker Swarm :))"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
